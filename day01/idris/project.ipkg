@@ -1,0 +1,7 @@
+
+package project
+modules = Main, Parser
+main = Main
+
+depends = prelude , contrib
+
