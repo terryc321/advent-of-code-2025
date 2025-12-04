@@ -1,0 +1,80 @@
+FUN> (find-rolls ex)
+13
+FUN> (remove-rolls ex)
+there are 13 rolls that can be removed 
+there are 12 rolls that can be removed 
+there are 7 rolls that can be removed 
+there are 5 rolls that can be removed 
+there are 2 rolls that can be removed 
+there are 1 rolls that can be removed 
+there are 1 rolls that can be removed 
+there are 1 rolls that can be removed 
+there are 1 rolls that can be removed 
+there are no more rolls to remove 
+43
+FUN> (find-rolls in)
+1367
+FUN> (remove-rolls in)
+there are 1367 rolls that can be removed 
+there are 1045 rolls that can be removed 
+there are 822 rolls that can be removed 
+there are 663 rolls that can be removed 
+there are 577 rolls that can be removed 
+there are 500 rolls that can be removed 
+there are 440 rolls that can be removed 
+there are 352 rolls that can be removed 
+there are 338 rolls that can be removed 
+there are 304 rolls that can be removed 
+there are 253 rolls that can be removed 
+there are 217 rolls that can be removed 
+there are 194 rolls that can be removed 
+there are 178 rolls that can be removed 
+there are 160 rolls that can be removed 
+there are 158 rolls that can be removed 
+there are 137 rolls that can be removed 
+there are 127 rolls that can be removed 
+there are 117 rolls that can be removed 
+there are 106 rolls that can be removed 
+there are 110 rolls that can be removed 
+there are 96 rolls that can be removed 
+there are 86 rolls that can be removed 
+there are 81 rolls that can be removed 
+there are 68 rolls that can be removed 
+there are 65 rolls that can be removed 
+there are 65 rolls that can be removed 
+there are 59 rolls that can be removed 
+there are 56 rolls that can be removed 
+there are 48 rolls that can be removed 
+there are 51 rolls that can be removed 
+there are 48 rolls that can be removed 
+there are 36 rolls that can be removed 
+there are 25 rolls that can be removed 
+there are 23 rolls that can be removed 
+there are 23 rolls that can be removed 
+there are 18 rolls that can be removed 
+there are 13 rolls that can be removed 
+there are 12 rolls that can be removed 
+there are 10 rolls that can be removed 
+there are 13 rolls that can be removed 
+there are 9 rolls that can be removed 
+there are 5 rolls that can be removed 
+there are 4 rolls that can be removed 
+there are 6 rolls that can be removed 
+there are 6 rolls that can be removed 
+there are 7 rolls that can be removed 
+there are 3 rolls that can be removed 
+there are 3 rolls that can be removed 
+there are 4 rolls that can be removed 
+there are 5 rolls that can be removed 
+there are 4 rolls that can be removed 
+there are 6 rolls that can be removed 
+there are 4 rolls that can be removed 
+there are 4 rolls that can be removed 
+there are 3 rolls that can be removed 
+there are 3 rolls that can be removed 
+there are 2 rolls that can be removed 
+there are 2 rolls that can be removed 
+there are 2 rolls that can be removed 
+there are 1 rolls that can be removed 
+there are no more rolls to remove 
+9144
