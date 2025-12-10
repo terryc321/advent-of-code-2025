@@ -77,7 +77,7 @@
 (multiple-value-bind (m b) (parseq 'foobar "(123,456,789)")
   (format t "m => ~a~%" m)
   (format t "b => ~a~%" b))
-  
+
 
 (defrule foobar () (and (and open-bracket (* (or hash-char dot-char)) close-bracket)
 			space
@@ -105,7 +105,7 @@
   gates
   g1
   g2
-)
+  )
 
 
 ;; read lines
@@ -191,7 +191,7 @@
 (all-digits '(#\1 #\2 #\3))
 (all-digits '(#\a #\2 #\c))
 
-    
+
 (defun group2 (the-parse)
   (let* (;; (the-parse (parseq 'foobar "[#.#.#] (1111,222,333,444,55555555) (66666,7,8,99,100,101,102) {10,11,12}"))
 	 (p (fourth the-parse))
@@ -226,9 +226,9 @@
 #|
 
 #S(COLLAB
-   :GATES "....##"
-   :G1 ((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5))
-   :G2 (61 15 50 14 45 50))
+:GATES "....##"
+:G1 ((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5))
+:G2 (61 15 50 14 45 50))
 
 given collab - how many button presses minimum will make lights come on -
 the machine lights initially off
@@ -275,28 +275,354 @@ can use a string toggle - zero based - just use :gates given - except fill with 
 	(setq next-states (make-hash-table :test #'equalp))
 	;; for each state known - key = "#..#" val=t b=(1 3 5) 
 	(maphash #'(lambda (key val)
-		   (dolist (b buttons)
-		     (let ((s2 (press-button key b)))
-		       (setf (gethash s2 next-states) t))))
+		     (dolist (b buttons)
+		       (let ((s2 (press-button key b)))
+			 (setf (gethash s2 next-states) t))))
 		 states)
 	;; next generation
 	(setq states next-states)
 	(incf presses)
 	;; check if any is solved ?
 	(maphash #'(lambda (key val)
-		   (when (equalp key end-state)
-		     (throw 'found-solution presses)))
+		     (when (equalp key end-state)
+		       (throw 'found-solution presses)))
 		 states)
 	;; otherwise
-	))))
-	
+	    ))))
+
 ;; simulate each input
 (defun part-1 ()
   (apply #'+ (mapcar #'sim (input))))
-      
-      
+
+
 ;; (part-1) => 500
 ;; accepted answer
 
+(defun empty-state (xs)
+  (let ((len (length xs))
+	(res nil))
+    (loop for i from 1 to len do
+      (setq res (cons 0 res)))
+    res))
+
+(defun press-button2(s button)
+  (let ((s2 (copy-seq s)))
+    (dolist (b button)
+      (setf (char s2 b) (toggle (char s2 b))))
+    s2))
+
+
+;; (defun sim2 (c)
+;;   (let* ((states (make-hash-table :test #'equalp))
+;; 	 (buttons (collab-g1 c))
+;; 	 (end-state (collab-g2 c)) ;; end state {3 4 5 7}
+;; 	 (initial-state (empty-state end-state))
+;; 	 (presses 0)
+;; 	 (next-states nil))
+;;     ;; first state
+;;     (setf (gethash initial-state states) t)
+;;     ;; 
+;;     (catch 'found-solution
+;;       (loop while t do
+;; 	(setq next-states (make-hash-table :test #'equalp))
+;; 	;; for each state known - key = "#..#" val=t b=(1 3 5) 
+;; 	(maphash #'(lambda (key val)
+;; 		     (dolist (b buttons)
+;; 		       (let ((s2 (press-button2 key b)))
+;; 			 (setf (gethash s2 next-states) t))))
+;; 		 states)
+;; 	;; next generation
+;; 	(setq states next-states)
+;; 	(incf presses)
+;; 	;; check if any is solved ?
+;; 	(maphash #'(lambda (key val)
+;; 		     (when (equalp key end-state)
+;; 		       (throw 'found-solution presses)))
+;; 		 states)
+;; 	;; otherwise
+;; 	    ))))
+
+#|
+
+#S(COLLAB
+:GATES "....##"
+:G1 ((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5))
+:G2 (61 15 50 14 45 50))
+
+
+((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5)) <- buttons
+(0 5) * n1
+
+0   1  2  3  4  5
+n1              n1   (0         5)
+n2    n2             (0   2      )
+n3    n3  n3 n3 n3   (0   2 3 4 5)
+n4    n4     n4 n4   (0   2   4 5)
+n5 n5 n5  n5 n5  (  1 2 3 4 5)
+n6 n6        n6 n6   (0 1     4 5)
+n7        n7 n7   (  1     4 5)
+
+
+200 * 200 * 200 * 200 * 200 * 200 * 200
+(* 200 200 200 200 200 200 200) 12800000000000000
+
+0: 61 = n1 + n2 + n3 + n4 +      n6
+1: 15 =                          n6 + n7
+2: 50 =      n2 + n3 + n4 + n5 
+3: 14 =           n3 +      n5
+4: 45 =           n3 + n4 + n5 + n6 + n7
+5: 50 = n1 + ?  + n3 + n4 + n5 + n6 + n7          
+
+0 1  2  3  4  5
+end state => (61 15 50 14 45 50)
+
+limit to to size of n1 - now n1 cannot be larger than 50
+Ax = B math problem
+A = (n1 n2 n3 n4 n5) x = (1 1 1 1 )  B desired output ?
+?? nahh ?? 
+
+n1 represents pressing button (0 5) once
+n2 repre... button (0 2) once
+n3 ... button (0 2 3 4 5)
+n4 ... button (0 2 4 5)
+n5 ... button (1 2 3 4 5)
+n6 ... button (0 1 4 5 )
+n7 ..  button (1 4 5)
+
+
+((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5)) 
+n1    n2      n3          n4           n5      n6        n7
+
+csp
+constraint solver 
+
+0  1  2  3  4  5
+end state => (61 15 50 14 45 50)
+
+reasoning engine
+forward + rewind 
+
+
+n1 affects 0 and 5 ->
+look at 0 : have 61 ... n1 could be 61
+look at 5 : have 50 ... n1 cannot be 61 ..too many .. atmost 50
+
+n2 affects 0 and 2
+look at current state due n1 choice - remaining amount 
+
+
+|#
+
+(defun solved-p (n1 n2 n3 n4 n5 n6 n7)
+  (let* ((e0 61)
+	 (e1 15)
+	 (e2 50)
+	 (e3 14)
+	 (e4 45)
+	 (e5 50)
+	 (out0 (+ n1 n2 n3 n4 n6))
+	 (out1 (+ n6 n7))
+	 (out2 (+ n2 n3 n4 n5))
+	 (out3 (+ n3 n5))
+	 (out4 (+ n3 n4 n5 n6 n7))
+	 (out5 (+ n1 n3 n4 n5 n6 n7))
+	 (solved (and (= out0 e0)(= out1 e1) (= out2 e2)(= out3 e3)(= out4 e4)(= out5 e5))))
+    ;; (format t "(~a:~a) (~a:~a) (~a:~a) (~a:~a) (~a:~a) (~a:~a) ~%"
+    ;; 	    out0 e0
+    ;; 	    out1 e1
+    ;; 	    out2 e2
+    ;; 	    out3 e3
+    ;; 	    out4 e4
+    ;; 	    out5 e5)
+    
+    solved))
+
+(defun cannot-satisfy (s)
+  (catch 'maybe
+    (when (> (aref s 0) 61) (throw 'maybe t))
+    (when (> (aref s 1) 15) (throw 'maybe t))
+    (when (> (aref s 2) 50) (throw 'maybe t))
+    (when (> (aref s 3) 14) (throw 'maybe t))
+    (when (> (aref s 4) 45) (throw 'maybe t))
+    (when (> (aref s 5) 50) (throw 'maybe t))
+    nil))
+
+
+;; (0 5)        0              5
+;;end state => (61 15 50 14 45 50)
+(defun n1 ()
+  (let* ((end #(61 15 50 14 45 50))
+	 (most (max 0 (min (aref end 0) (aref end 5)))))
+    (catch 'unsat
+      (loop for i from 0 to most do
+	(let ((s (make-array 6 :initial-element 0)))
+	  (setf (aref s 0) (+ i (aref s 0)))
+	  (setf (aref s 5) (+ i (aref s 5)))
+	  ;; cant yet be solved
+	  (when (cannot-satisfy s) (throw 'unsat nil))
+	  (n2 end s i))))))
+
+;;FUN> (collab-g1 (car (input)))
+;;((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5))
+;;              0     2
+;;end state => (61 15 50 14 45 50)
+;;              n1             n1
+;;              n2    n2
+;; most n2 can be is either 0 or minimum of whats left over from choice of n1
+(defun n2 (end s n1)
+  (let ((most (max 0 (min (- (aref end 0) (aref s 0))
+			  (- (aref end 2) (aref s 2))))))
+    (catch 'unsat
+      (loop for i from 0 to most do
+	(let ((s2 (copy-seq s)))    
+	  (setf (aref s2 0) (+ i (aref s2 0)))
+	  (setf (aref s2 2) (+ i (aref s2 2)))
+	  (when (cannot-satisfy s2) (throw 'unsat nil))
+	  (n3 end s2 n1 i))))))
+
+;;((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5))
+;;             ----n3----
+(defun n3 (end s n1 n2)
+  (let ((most (max 0 (min (- (aref end 0) (aref s 0))
+			  (- (aref end 2) (aref s 2))
+			  (- (aref end 3) (aref s 3))
+			  (- (aref end 4) (aref s 4))
+			  (- (aref end 5) (aref s 5))))))
+    (catch 'unsat
+
+      (loop for i from 0 to most do    
+	(let ((s2 (copy-seq s)))    
+	  (setf (aref s2 0) (+ i (aref s2 0)))
+	  (setf (aref s2 2) (+ i (aref s2 2)))
+	  (setf (aref s2 3) (+ i (aref s2 3)))
+	  (setf (aref s2 4) (+ i (aref s2 4)))
+	  (setf (aref s2 5) (+ i (aref s2 5)))
+	  (when (cannot-satisfy s2) (throw 'unsat nil))
+	  (n4 end s2 n1 n2 i))))))
+
+;;((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5))
+;;                         ----n4----
+(defun n4 (end s n1 n2 n3)
+  (let ((most (max 0 (min (- (aref end 0) (aref s 0))
+			  (- (aref end 2) (aref s 2))			  
+			  (- (aref end 4) (aref s 4))
+			  (- (aref end 5) (aref s 5))
+			  ))))
+    (catch 'unsat
+
+      (loop for i from 0 to most do     
+	(let ((s2 (copy-seq s)))    
+	  (setf (aref s2 0) (+ i (aref s2 0)))
+	  (setf (aref s2 2) (+ i (aref s2 2)))
+	  (setf (aref s2 4) (+ i (aref s2 4)))
+	  (setf (aref s2 5) (+ i (aref s2 5)))
+	  (when (cannot-satisfy s2) (throw 'unsat nil))
+	  (n5 end s2 n1 n2 n3 i))))))
+
+
+;;((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5))
+;;   n1   n2     n3          n4       ----n5----
+(defun n5 (end s n1 n2 n3 n4)
+  (let ((most (max 0 (min (- (aref end 1) (aref s 1))
+			  (- (aref end 2) (aref s 2))
+			  (- (aref end 3) (aref s 3))			  
+			  (- (aref end 4) (aref s 4))
+			  (- (aref end 5) (aref s 5))
+			  ))))
+    (catch 'unsat
+
+      (loop for i from 0 to most do         
+	(let ((s2 (copy-seq s)))    
+	  (setf (aref s2 1) (+ i (aref s2 1)))
+	  (setf (aref s2 2) (+ i (aref s2 2)))
+	  (setf (aref s2 3) (+ i (aref s2 3)))
+	  (setf (aref s2 4) (+ i (aref s2 4)))
+	  (setf (aref s2 5) (+ i (aref s2 5)))
+	  (when (cannot-satisfy s2) (throw 'unsat nil))
+	  (n6 end s2 n1 n2 n3 n4 i))))))
+
+;;((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5))
+;;   n1   n2     n3          n4          n5      ----n6----
+(defun n6 (end s n1 n2 n3 n4 n5)
+  (let ((most (max 0 (min (- (aref end 0) (aref s 0))
+		          (- (aref end 1) (aref s 1))
+			  (- (aref end 4) (aref s 4))
+			  (- (aref end 5) (aref s 5))
+			  ))))
+    (catch 'unsat
+      (loop for i from 0 to most do         
+	(let ((s2 (copy-seq s)))
+	  (setf (aref s2 0) (+ i (aref s2 0)))
+	  (setf (aref s2 1) (+ i (aref s2 1)))
+	  (setf (aref s2 4) (+ i (aref s2 4)))
+	  (setf (aref s2 5) (+ i (aref s2 5)))
+	  (when (cannot-satisfy s2) (throw 'unsat nil))
+	  (n7 end s2 n1 n2 n3 n4 n5 i))))))
+
+;;((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5))
+;;   n1   n2     n3          n4          n5         n6    ----n7----
+(defun n7 (end s n1 n2 n3 n4 n5 n6)
+  (let ((most (max 0 (min (- (aref end 1) (aref s 1))
+			  (- (aref end 4) (aref s 4))
+			  (- (aref end 5) (aref s 5))
+			  ))))
+    (catch 'unsat
+      (loop for i from 0 to most do         
+	(let ((s2 (copy-seq s)))    
+	  (setf (aref s2 1) (+ i (aref s2 1)))
+	  (setf (aref s2 4) (+ i (aref s2 4)))
+	  (setf (aref s2 5) (+ i (aref s2 5)))
+	  (when (cannot-satisfy s2) (throw 'unsat nil))
+	  (final end s2 n1 n2 n3 n4 n5 n6 i))))))
+
+
+(defun final (end s n1 n2 n3 n4 n5 n6 n7)
+  (cond
+    ((solved-p n1 n2 n3 n4 n5 n6 n7)
+     (format t "solved ~a ~a ~a ~a ~a ~a ~a : tot ~a ~%" n1 n2 n3 n4 n5 n6 n7 (+ n1 n2 n3 n4 n5 n6 n7)))
+    (t nil)))
+
+
+
+
+
+
+;; (defun brute ()
+;;   (let ((n1 0)
+;; 	(n2 0)
+;; 	(n3 0)
+;; 	(n4 0)
+;; 	(n5 0)
+;; 	(n6 0)
+;; 	(n7 0))	
+;;     (loop for n1 from 50 downto 0 do
+
+;;       (loop for n2 from 
+;;       (loop for n2 from 0 to 60 do
+;; 	(loop for n3 from 0 to 60 do
+;; 	  (loop for n4 from 0 to 60 do
+;; 	    (loop for n5 from 0 to 60 do
+;; 	      (loop for n6 from 0 to 60 do
+;; 		(loop for n7 from 0 to 60 do
+
+
+
+
+
+;; (defun description (buttons)
+;;   (let* ((len (length buttons))
+;; 	 (syms (let ((res nil))
+;; 		 (loop for i from 0 to (- len 1) do
+;; 		   (let ((but (nth i buttons)))
+;;     len))
+
+
+
+
+
+
+;; ;; simulate each input
+;; (defun part-2 ()
+;;   (apply #'+ (mapcar #'sim2 (input))))
 
 
