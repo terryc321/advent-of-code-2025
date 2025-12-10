@@ -223,4 +223,80 @@
 ;; buttons are any listed in g1
 ;; ignore g2 as machines not running
 
+#|
+
+#S(COLLAB
+   :GATES "....##"
+   :G1 ((0 5) (0 2) (0 2 3 4 5) (0 2 4 5) (1 2 3 4 5) (0 1 4 5) (1 4 5))
+   :G2 (61 15 50 14 45 50))
+
+given collab - how many button presses minimum will make lights come on -
+the machine lights initially off
+each machine has a different number of lights
+pressing a "button" toggles the relevant lights
+
+can use a string toggle - zero based - just use :gates given - except fill with "." offs
+
+|#
+
+(defun toggle(ch)
+  (cond
+    ((char= ch #\.) #\#)
+    ((char= ch #\#) #\.)
+    (t (error "bad ch"))))
+
+(defun empty-string (str)
+  (let ((len (length str))
+	(res ""))
+    (loop for i from 1 to len do
+      (setq res (concatenate 'string res ".")))
+    res))
+
+;; keep original string as many buttons want to press on it 
+(defun press-button(s button)
+  (let ((s2 (copy-seq s)))
+    (dolist (b button)
+      (setf (char s2 b) (toggle (char s2 b))))
+    s2))
+
+
+(defun sim (c)
+  (let ((states (make-hash-table :test #'equalp))
+	(buttons (collab-g1 c))
+	(end-state (collab-gates c))
+	(initial-state (empty-string (collab-gates c)))
+	(presses 0)
+	(next-states nil))
+    ;; first state
+    (setf (gethash initial-state states) t)
+    ;; 
+    (catch 'found-solution
+      (loop while t do
+	(setq next-states (make-hash-table :test #'equalp))
+	;; for each state known - key = "#..#" val=t b=(1 3 5) 
+	(maphash #'(lambda (key val)
+		   (dolist (b buttons)
+		     (let ((s2 (press-button key b)))
+		       (setf (gethash s2 next-states) t))))
+		 states)
+	;; next generation
+	(setq states next-states)
+	(incf presses)
+	;; check if any is solved ?
+	(maphash #'(lambda (key val)
+		   (when (equalp key end-state)
+		     (throw 'found-solution presses)))
+		 states)
+	;; otherwise
+	))))
+	
+;; simulate each input
+(defun part-1 ()
+  (apply #'+ (mapcar #'sim (input))))
+      
+      
+;; (part-1) => 500
+;; accepted answer
+
+
 
