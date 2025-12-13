@@ -14,6 +14,7 @@
   (:local-nicknames (#:tt #:fiveam))
   )
 
+
 (in-package :fun)
 
 (defun read-file (filename)
@@ -107,6 +108,13 @@
     (setf (aref arr 1 3) (aref (g-arr g) 3 3)) 
     (make-g :arr arr)))
 
+
+
+
+
+
+
+;; ===== test suite ========
 
 (tt:def-suite test-suite
   :description "Test my system.")
