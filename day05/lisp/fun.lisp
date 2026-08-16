@@ -15,22 +15,27 @@
 
 (declaim (optimize (speed 0) (safety 3) (debug 3)))
 
-(defun example ()
-  '((3 5)
-    (10 14)
-    (16 20)
-    (12 18)
-    ()
-    (1)
-    (5)
-    (8)
-    (11)
-    (17)
-    (32)))
+;; (defun example ()
+;;   '((3 5)
+;;     (10 14)
+;;     (16 20)
+;;     (12 18)
+;;     ()
+;;     (1)
+;;     (5)
+;;     (8)
+;;     (11)
+;;     (17)
+;;     (32)))
 
 (defun input ()
   (with-open-file (stream "input.txt" :direction :input)
     (read stream)))
+
+(defun example ()
+  (with-open-file (stream "example.txt" :direction :input)
+    (read stream)))
+
 
 (defun process (xs)
   (let ((ranges nil)
@@ -154,42 +159,45 @@
 ;; should we give each range an identifier ? 
 
 (defstruct range lo hi id)
-(equalp (make-range :lo 3 :hi 4 :id 1)
-	(make-range :hi 4 :lo 3 :id 2))
+;; (equalp (make-range :lo 3 :hi 4 :id 1)
+;; 	(make-range :hi 4 :lo 3 :id 2))
 
-(defparameter ranges (multiple-value-bind (rngs nums)
-			 (process (input))
-		       (let ((unsorted (mapcar (let ((id -1))
-				 (lambda (ab)
-				   (incf id)
-				   (destructuring-bind (lo hi) ab
-				     (make-range :lo lo :hi hi :id id))))
-			       rngs)))
-		      (sort unsorted (lambda (a b) (< (range-lo a) (range-lo b)))))))
+(defun make-ranges(data)
+  (let ((rngs (process data)))
+    (let ((unsorted (mapcar (let ((id -1))
+			      (lambda (ab)
+				(incf id)
+				(destructuring-bind (lo hi) ab
+				  (make-range :lo lo :hi hi :id id))))
+			    rngs)))
+      (sort unsorted (lambda (a b) (< (range-lo a) (range-lo b)))))))
+
+;; (make-ranges (input))
+;; (make-ranges (example))
 
 ;; ranges
 ;; lo hi id
 ;; id allows them to be removed from a list cleanly , we can simplify refer to component
 ;; save a list of id's that need to be removed or added cleanly
 
-;; integration
-(defparameter known (first ranges))
-(setq ranges (cdr ranges))
+;; ;; integration
+;; (defparameter known (first ranges))
+;; (setq ranges (cdr ranges))
 
-;; check for consistency with ranges 
-(defun consistent (rngs)
-  (catch 'counterexample
-    (dolist (r rngs)
-      (dolist (q rngs)
-	(when (not (= (range-id r) (range-id q)))
-	  ;; so r and q are different ranges
-	  (let ((ok (or (and (< (range-lo r) (range-lo q))
-			     (< (range-hi r) (range-lo q)))
-			(and (> (range-lo r) (range-hi q))
-			     (> (range-hi r) (range-hi q))))))
-	    (when (not ok)
-	      (throw 'counterexample nil))))))
-    t))
+;; ;; check for consistency with ranges 
+;; (defun consistent (rngs)
+;;   (catch 'counterexample
+;;     (dolist (r rngs)
+;;       (dolist (q rngs)
+;; 	(when (not (= (range-id r) (range-id q)))
+;; 	  ;; so r and q are different ranges
+;; 	  (let ((ok (or (and (< (range-lo r) (range-lo q))
+;; 			     (< (range-hi r) (range-lo q)))
+;; 			(and (> (range-lo r) (range-hi q))
+;; 			     (> (range-hi r) (range-hi q))))))
+;; 	    (when (not ok)
+;; 	      (throw 'counterexample nil))))))
+;;     t))
 
 		    
 #|
@@ -215,54 +223,130 @@ for n ranges there are multiple places r4 can interlude itself
 
 |#
 
-(defun getid(id)
-  (catch 'found
-    (dolist (r ranges)
-      (cond
-	((= (range-id r) id) (throw 'found r))))
-    (error "id not found")))
+;; (defun getid(id)
+;;   (catch 'found
+;;     (dolist (r ranges)
+;;       (cond
+;; 	((= (range-id r) id) (throw 'found r))))
+;;     (error "id not found")))
 
-(defparameter solution (list (car ranges)))
-;; (setq ranges (cdr ranges))
-;; try to keep ranges sorted ?
-
-
+;; (defparameter solution (list (car ranges)))
+;; ;; (setq ranges (cdr ranges))
+;; ;; try to keep ranges sorted ?
 
 
-;; can we combine k and r ??
-(defun comb(kid rid)
-  (let ((k (getid kid))
-	(r (getid rid)))
-    (assert (eq (type-of k) 'range))
-    (assert (eq (type-of r) 'range))
-    (cond
-      ((and (< (range-lo k) (range-lo r))
-	    (< (range-hi k) (range-lo r)))
-       ;; k is below r -- no interference
-       (format t "k is below r -- no interference~%")
-       'none)
-      ((and (> (range-lo k) (range-lo r))
-	    (> (range-hi k) (range-lo r)))
-       ;; k is above r -- no interference
-       (format t "k is above r -- no interference~%")
-       'none)
-      ((and (> (range-lo k) (range-lo r))
-	    (< (range-hi k) (range-hi r)))
-       ;; k is inside r entirely -- so r subsumes k  , we can remove k
-       (format t "r subsumes k -- k is redundant ~%")
-       'subsumes)
-      ((and (> (range-lo r) (range-lo k))
-	    (< (range-hi r) (range-hi k)))
-       ;; r is inside k entirely -- so r subsumes k  , we can remove k
-       (format t "r subsumes k -- k is redundant ~%")
-       'subsumed)
-      (t 'unknown))))
+;; ;; can we combine k and r ??
+;; (defun comb(kid rid)
+;;   (let ((k (getid kid))
+;; 	(r (getid rid)))
+;;     (assert (eq (type-of k) 'range))
+;;     (assert (eq (type-of r) 'range))
+;;     (cond
+;;       ((and (< (range-lo k) (range-lo r))
+;; 	    (< (range-hi k) (range-lo r)))
+;;        ;; k is below r -- no interference
+;;        (format t "k is below r -- no interference~%")
+;;        'none)
+;;       ((and (> (range-lo k) (range-lo r))
+;; 	    (> (range-hi k) (range-lo r)))
+;;        ;; k is above r -- no interference
+;;        (format t "k is above r -- no interference~%")
+;;        'none)
+;;       ((and (> (range-lo k) (range-lo r))
+;; 	    (< (range-hi k) (range-hi r)))
+;;        ;; k is inside r entirely -- so r subsumes k  , we can remove k
+;;        (format t "r subsumes k -- k is redundant ~%")
+;;        'subsumes)
+;;       ((and (> (range-lo r) (range-lo k))
+;; 	    (< (range-hi r) (range-hi k)))
+;;        ;; r is inside k entirely -- so r subsumes k  , we can remove k
+;;        (format t "r subsumes k -- k is redundant ~%")
+;;        'subsumed)
+;;       (t 'unknown))))
 
       
   
 
 
 
+#|
+idea of frogger
+if we can find lowest value in known ranges
+then we can find highest value in known ranges
+count = 0
+start at lowest value find that range - add that length of range to count
+find any range such that it begins at or below n+1 .. to end - add that to count
+so we will be adding partial counts
+
+
+|#
+
+
+(defun lowest-range (rngs)
+  (let ((low (range-lo (car rngs))))
+    (dolist (r rngs)
+      (let ((lo (range-lo r)))
+	(when (< lo low)
+	  (setq low lo))))
+    low))
+
+(defun highest-range (rngs)
+  (let ((high (range-hi (car rngs))))
+    (dolist (r rngs)
+      (let ((hi (range-hi r)))
+	(when (> hi high)
+	  (setq high hi))))
+    high))
+
+(defun lowest-range-above-or-equal (rngs x)
+  (let ((low nil))
+    (dolist (r rngs)
+      (let ((lo (range-lo r)))
+	(when (>= lo x)
+	  (cond
+	    (low (if (< lo low)
+		     (setq low lo)))
+	    (t (setq low lo))))))
+    low))
+
+
+(defun frogger (rngs)
+  (let* ((lowest (lowest-range rngs))
+	 (highest (highest-range rngs))
+	 (count 0)
+	 (amount 0)
+	 (index lowest))
+    (loop while (<= index highest) do
+      (catch 'found
+	(dolist (r rngs)
+	  (when (and (>= index (range-lo r)) (<= index (range-hi r)))
+	    (format t "found a range to jump to (~a,~a) : (diff ~a)~%" index (range-hi r) (- (range-hi r) index))
+	    ;; off by one error abound here ... dragons are lurking ...
+	    (setq amount (+ 1 (- (range-hi r) index)))
+	    (format t "increasing count by amount ~a~%" amount)
+	    (setq count (+ count amount))
+	    ;; advance
+	    (setq index (+ 1 (range-hi r)))
+	    (throw 'found t)))
+	;; if we get here we did not find any leaf begin and index+1 so called
+	;; huh ... we infinite loop then ...
+	(cond
+	  ((> index highest) (throw 'found t))
+	  (t
+	   (let ((next (lowest-range-above-or-equal rngs index)))
+	     (assert next)
+	     (assert (> next index))
+	     (format t "skipping over to ~a~%" next)
+	     (setq index next))))))
+    count))
+
+(defun part2 ()
+  (frogger (make-ranges (input))))
+
+;; we used global defparameter ranges we got one answer
+;; (part2) => 327738089061937  ... then we rewrote using
+;;    normal defun and lexical scope .. we got a different answer
+;; (part2) => 332998283036769  huh ?? ... answer accepted  (this was accepted answer)
 
 
 
@@ -276,74 +360,75 @@ for n ranges there are multiple places r4 can interlude itself
 ;;     ((null todo) known)
 ;;     (t (integrate (integrate2 known (car todo)) (cdr todo)))))
 
-
 ;;(defun inside-range(i r)
 
 ;; does r stretch over several ranges of known ?
 ;; if so those ranges are obsolete
 ;; then what ?
-(defun integrate2(known r)
-  (cond
-    ((null known) (list r))
-    (t  ;; known is non empty
-	(format t "known is not empty ~%")
-	(let ((result nil)
-	      (grablo nil)
-	      (grabhi nil))
-	  (dolist (k known)
-	    ;; check by assert that ranges do not conflict on edge cases bounds
-	    ;; (assert (not (= (range-lo k) (range-lo r))))
-	    ;; (assert (not (= (range-hi k) (range-hi r))))
-	    ;; (assert (not (= (range-lo k) (range-hi r))))
-	    ;; (assert (not (= (range-hi k) (range-lo r))))
-	    ;; ok so now what ?
-	    ;; rlo is inside k somewhere
-	    ;; rhi is inside k somewhere
-	    (let ((lowr (and (>= (range-lo r) (range-lo k))
-			     (<= (range-lo r) (range-hi k))))
-		  (highr (and (>= (range-hi r) (range-lo k))
-			      (<= (range-hi r) (range-hi k)))))	 
-	      (cond
-		((and lowr highr)
-		 ;; r is completely subsumed inside already existing range
-		 ;; so no change necessary
-		 ;; indeed no other range in known can/should be able to grab this range r
-		 (setq grablo t)
-		 (setq grabhi t)
-		 (setq result (cons k result)))
-		(lowr
-		 ;; rlo is inside k
-		 (format t "rlo inside k~%")
-		 )
-		(highr
-		 ;; rhi is inside k 
-		 (format t "rhi inside k~%")
-		 )
-		(t
-		 ;; no interference
-		 (format t "no interference~%")
-		 (setq result (cons k result))))))
-	  ;; if 
-	  (cond
-	    ((and grablo grabhi) nil)
-	    ((or grablo grabhi) (error "grab was not finished"))
-	    (t
-	     ;; no grab - no range contained lo or hi of r 
-	     (setq result (cons r result))))
-	  result))))
+;; (defun integrate2(known r)
+;;   ;; keep consistency
+;;   (assert (consistent known))
+;;   (cond
+;;     ((null known) (list r))
+;;     (t  ;; known is non empty
+;; 	(format t "known is not empty ~%")
+;; 	(let ((result nil)
+;; 	      (grablo nil)
+;; 	      (grabhi nil))
+;; 	  (dolist (k known)
+;; 	    ;; check by assert that ranges do not conflict on edge cases bounds
+;; 	    ;; (assert (not (= (range-lo k) (range-lo r))))
+;; 	    ;; (assert (not (= (range-hi k) (range-hi r))))
+;; 	    ;; (assert (not (= (range-lo k) (range-hi r))))
+;; 	    ;; (assert (not (= (range-hi k) (range-lo r))))
+;; 	    ;; ok so now what ?
+;; 	    ;; rlo is inside k somewhere
+;; 	    ;; rhi is inside k somewhere
+;; 	    (let ((lowr (and (>= (range-lo r) (range-lo k))
+;; 			     (<= (range-lo r) (range-hi k))))
+;; 		  (highr (and (>= (range-hi r) (range-lo k))
+;; 			      (<= (range-hi r) (range-hi k)))))	 
+;; 	      (cond
+;; 		((and lowr highr)
+;; 		 ;; r is completely subsumed inside already existing range
+;; 		 ;; so no change necessary
+;; 		 ;; indeed no other range in known can/should be able to grab this range r
+;; 		 (setq grablo t)
+;; 		 (setq grabhi t)
+;; 		 (setq result (cons k result)))
+;; 		((and lowr (not highr))
+;; 		 ;; rlo is inside k
+;; 		 (format t "rlo inside k (~a)~%" (range-id k))
+;; 		 )
+;; 		((and (not lowr) highr)
+;; 		 ;; rhi is inside k 
+;; 		 (format t "rhi inside k (~a)~%" (range-id k))
+;; 		 )
+;; 		(t
+;; 		 ;; no interference
+;; 		 (format t "no interference~%")
+;; 		 (setq result (cons k result))))))
+;; 	  ;; if 
+;; 	  (cond
+;; 	    ((and grablo grabhi) nil)
+;; 	    ((or grablo grabhi) (error "grab was not finished"))
+;; 	    (t
+;; 	     ;; no grab - no range contained lo or hi of r 
+;; 	     (setq result (cons r result))))
+;; 	  result))))
 
 
-(defun part2 ()
-  (let ((result (list (car ranges)))
-	(todos (cdr ranges)))
-    (dolist (todo todos)
-      ;; (terpri)
-      ;; (terpri)
-      (format t "before ~%~a~%" result)
-      (format t "integrate2 ~a~%" todo)
-      (setq result (integrate2 result todo))
-      (format t "result ~%~a~%" result))
-    result))
+;; (defun part2 ()
+;;   (let ((result (list (car ranges)))
+;; 	(todos (cdr ranges)))
+;;     (dolist (todo todos)
+;;       ;; (terpri)
+;;       (terpri)
+;;       (format t "before ~%~a~%" result)
+;;       (format t "integrate2 ~a~%" todo)
+;;       (setq result (integrate2 result todo))
+;;       (format t "result ~%~a~%" result))
+;;     result))
 
 
 
